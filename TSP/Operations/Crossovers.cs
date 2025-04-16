@@ -18,7 +18,7 @@ namespace TSP.Operations
                 {
                     switch (crossoverType.ToLower())
                     {
-                        case "porządkowe ":
+                        case "porządkowe":
                             offspring.AddRange(OrderCrossover(parents[i], parents[i + 1]));
                             break;
                         case "częściowo odwz.":
