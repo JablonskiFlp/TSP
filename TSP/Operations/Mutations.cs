@@ -18,10 +18,10 @@ namespace TSP.Operations
                 {
                     switch (mutationType.ToLower())
                     {
-                        case "swap":
+                        case "zamiana miejsc":
                             mutatedPopulation.Add(SwapMutation(chrom, rand));
                             break;
-                        case "scramble":
+                        case "przetasowanie":
                             mutatedPopulation.Add(ScrambleMutation(chrom, rand));
                             break;
                         default:

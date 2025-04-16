@@ -18,10 +18,10 @@ namespace TSP.Operations
                 {
                     switch (crossoverType.ToLower())
                     {
-                        case "ox1":
+                        case "porządkowe ":
                             offspring.AddRange(OrderCrossover(parents[i], parents[i + 1]));
                             break;
-                        case "pmx":
+                        case "częściowo odwz.":
                             offspring.AddRange(PartiallyMappedCrossover(parents[i], parents[i + 1]));
                             break;
                         default:

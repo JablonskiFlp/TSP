@@ -1,6 +1,6 @@
 ﻿namespace TSP
 {
-    partial class Form1
+    partial class TSP
     {
         /// <summary>
         ///  Required designer variable.

@@ -8,11 +8,11 @@ namespace TSP.Operations
         {
             switch (selectionType.ToLower())
             {
-                case "roulette":
+                case "ruletkowa":
                     return RouletteSelection(population);
-                case "tournament":
+                case "turniejowa":
                     return TournamentSelection(population, tournamentSize);
-                case "rank":
+                case "rankingowa":
                     return RankSelection(population);
                 default:
                     throw new ArgumentException("Invalid selection type");
