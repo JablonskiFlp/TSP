@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TSP.Models
 {
-    internal class Population
+    public class Population
     {
         public List<Chromosome> basePopulation = new();
         public List<Chromosome> parentPopulation = new();

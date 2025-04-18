@@ -1,3 +1,337 @@
-PopulationID,Czas,Generacje,Stagnacja,OstatniaGeneracja,Fitness,Populacja,Geny,Selekcja,Krzyżowanie,Mutacja,ParentRatio,MutationRatio,CrossoverRatio
-1d1c3d0b-9a91-4dc9-adba-5175de0e0b7d,63880341592,4319,100,20,33,300,10,10,roulette,ox1,swap,0,5,0,1,0,9
-1d1c3d0b-9a91-4dc9-adba-5175de0e0b7d,63880341601,505844,100,20,44,268,10,10,roulette,ox1,swap,0,5,0,1,0,9
+using System.Globalization;
+using System.IO;
+using TSP.Models;
+
+namespace TSP;
+
+public partial class TSP : Form
+{
+    private Population population;
+    private int generations;
+    private int stagnationLimit;
+    private int stagnationCounter;
+    private int bestFitness;
+    private string selectionType;
+    private string crossoverType;
+    private string mutationType;
+    public double PartentRatio;
+    public double CrossoverRatio;
+    public double MutationRatio;
+    private bool isPaused = false;
+    private CancellationTokenSource cts;
+    private Label lblIteration;
+    public TrackBar trackSpeed;
+    private CheckBox chkSkipVisualization;
+    private Label lblProgress;
+    private List<int> bestFitnessHistory = new List<int>();
+    private List<int> averageFitnessHistory = new List<int>();
+    private Label lblfit;
+    public DateTime startTime;
+    private int _lastGeneration;
+    private string txtSciezka;
+    private Button btnUstawSciezke;
+    private bool _quickEnd;
+    public TSP()
+    {
+        InitializeComponent();
+    }
+
+    private async Task RunAlgorithm(CancellationToken token)
+    {
+        for (int i = 0; i < generations; i++)
+        {
+            if (token.IsCancellationRequested) break;
+            while (isPaused) await Task.Delay(100);
+
+            population.createNextPopulation(selectionType, crossoverType, mutationType, PartentRatio, CrossoverRatio, MutationRatio);
+
+            int currentBest = population.BestFitness();
+            int currentAvg = population.AverageFitness();
+            bestFitnessHistory.Add(currentBest);
+            averageFitnessHistory.Add(currentAvg);
+            if (currentBest < bestFitness)
+            {
+                bestFitness = currentBest;
+                stagnationCounter = 0;
+            }
+            else stagnationCounter++;
+
+            lblIteration.Invoke((MethodInvoker)(() => lblIteration.Text = $"Iteracja: {i + 1}"));
+            lblBestFitness.Invoke((MethodInvoker)(() => lblBestFitness.Text = $"Najlepszy Fitness: {currentBest}"));
+
+            DrawChart();
+
+            DrawBestChromosome();
+            if (stagnationCounter >= stagnationLimit)
+            {
+                _lastGeneration = i;
+                ZapiszDoCSV();
+                MessageBox.Show("To jest najlepsze rozwiązanie jakie udało się znaleść. Wyniki zostały zapisane do pliku.", "Koniec");
+                return;
+            }
+            if (!_quickEnd)
+            {
+                await Task.Delay(501 - TrackBar.Value);
+            }
+        }
+        _lastGeneration = generations;
+        ZapiszDoCSV();
+        MessageBox.Show("To jest najlepsze rozwiązanie jakie udało się znaleść. Wyniki zostały zapisane do pliku.", "Koniec");
+        return;
+    }
+
+    private void RunAnlgorithmQuick()
+    {
+        for (int i = 0; i < generations; i++)
+        {
+            population.createNextPopulation(selectionType, crossoverType, mutationType, PartentRatio, CrossoverRatio, MutationRatio);
+            int currentBest = population.BestFitness();
+            if (currentBest < bestFitness)
+            {
+                bestFitness = currentBest;
+                stagnationCounter = 0;
+            }
+            else stagnationCounter++;
+            if (stagnationCounter >= stagnationLimit)
+            {
+                _lastGeneration = i;
+                ZapiszDoCSV();
+                return;
+            }
+        }
+        _lastGeneration = generations;
+        ZapiszDoCSV();
+    }
+
+    private void DrawChart()
+    {
+        if (chartBox2.Image != null) chartBox2.Image.Dispose();
+        Bitmap bmp = new Bitmap(chartBox2.Width, chartBox2.Height);
+        using (Graphics g = Graphics.FromImage(bmp))
+        {
+            g.Clear(Color.White);
+            Pen bestPen = new Pen(Color.Green, 2);
+            Pen avgPen = new Pen(Color.Blue, 2);
+
+            int padding = 20;
+            int graphWidth = bmp.Width - 2 * padding;
+            int graphHeight = bmp.Height - 2 * padding;
+
+            if (bestFitnessHistory.Count > 1)
+            {
+                int maxIterations = bestFitnessHistory.Count;
+                int maxFitness = Math.Max(bestFitnessHistory.Max(), averageFitnessHistory.Max());
+                float scaleX = (float)graphWidth / maxIterations;
+                float scaleY = (float)graphHeight / maxFitness;
+
+                for (int i = 1; i < maxIterations; i++)
+                {
+                    g.DrawLine(bestPen,
+                        padding + (i - 1) * scaleX, bmp.Height - padding - bestFitnessHistory[i - 1] * scaleY,
+                        padding + i * scaleX, bmp.Height - padding - bestFitnessHistory[i] * scaleY);
+
+                    g.DrawLine(avgPen,
+                        padding + (i - 1) * scaleX, bmp.Height - padding - averageFitnessHistory[i - 1] * scaleY,
+                        padding + i * scaleX, bmp.Height - padding - averageFitnessHistory[i] * scaleY);
+                }
+            }
+        }
+        chartBox2.Image = bmp;
+    }
+
+    private void TSP_Load(object sender, EventArgs e)
+    {
+        cmbCrossover.SelectedIndex = 0;
+        cmbMutation.SelectedIndex = 0;
+        cmbSelection.SelectedIndex = 0;
+    }
+
+    private void DrawBestChromosome()
+    {
+        Chromosome best = population.GetBestChromosome();
+        if (pictureBox == null) return;
+
+        Bitmap bmp = new Bitmap(pictureBox.Width, pictureBox.Height);
+        Graphics g = Graphics.FromImage(bmp);
+        g.Clear(Color.White);
+
+        Pen pen = new Pen(Color.Blue, 2);
+        Brush brush = new SolidBrush(Color.Red);
+
+        int scale = 5;
+        for (int i = 0; i < best.genes.Count; i++)
+        {
+            Gene g1 = best.genes[i];
+            Gene g2 = best.genes[(i + 1) % best.genes.Count];
+
+            g.DrawLine(pen, g1.X * scale, g1.Y * scale, g2.X * scale, g2.Y * scale);
+        }
+
+        foreach (var gene in best.genes)
+        {
+            g.FillEllipse(brush, gene.X * scale - 3, gene.Y * scale - 3, 6, 6);
+        }
+
+        pictureBox.Invoke((MethodInvoker)(() => pictureBox.Image = bmp));
+    }
+
+    private void ZapiszDoCSV()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(txtSciezka))
+            {
+                string folder = AppDomain.CurrentDomain.BaseDirectory;
+                txtSciezka = Path.Combine(folder, $"wyniki.csv");
+            }
+
+            bool addHeader = false;
+
+            if (!File.Exists(txtSciezka) || new FileInfo(txtSciezka).Length == 0)
+            {
+                addHeader = true;
+            }
+
+            using (StreamWriter sw = new StreamWriter(txtSciezka, append: true))
+            {
+                if (addHeader)
+                {
+                    sw.WriteLine("PopulationID,Czas,Generacje,Stagnacja,OstatniaGeneracja,Fitness,Populacja,Geny,Selekcja,Krzyżowanie,Mutacja,ProcentRodzicow,ProcentMutacji,ProcentKrzyzowania");
+                }
+
+                Chromosome best = population.GetBestChromosome();
+                double czas = (DateTime.Now - startTime).TotalSeconds;
+
+                string linia = string.Join(",",
+                    population.populationID,
+                    czas.ToString(CultureInfo.InvariantCulture),
+                    generations,
+                    stagnationLimit,
+                    _lastGeneration,
+                    bestFitness,
+                    population.basePopulation.Count,
+                    best.genes.Count,
+                    selectionType,
+                    crossoverType,
+                    mutationType,
+                    PartentRatio.ToString(CultureInfo.InvariantCulture),
+                    MutationRatio.ToString(CultureInfo.InvariantCulture),
+                    CrossoverRatio.ToString(CultureInfo.InvariantCulture)
+                );
+
+                sw.WriteLine(linia);
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Wystąpił błąd podczas zapisu do pliku: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+
+    private void btnPause_Click(object sender, EventArgs e)
+    {
+        isPaused = false;
+    }
+
+    private void chkSkipVisualisation_CheckedChanged(object sender, EventArgs e)
+    {
+        bool isChecked = chkSkipVisualisation.Checked;
+        lblRepeatCount.Visible = isChecked;
+        txtRepeatCount.Visible = isChecked;
+        button1.Visible = !isChecked;
+    }
+
+    private void btnResume_Click(object sender, EventArgs e)
+    {
+        isPaused = true;
+    }
+
+    private async void btnStart_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            _quickEnd = false;
+            DateTime startTime = DateTime.Now;
+            btnStart.Enabled = false;
+            int populationSize = int.Parse(txtPopSize.Text);
+            int numPopulations = int.Parse(txtNumPop.Text);
+            generations = int.Parse(txtGenerations.Text);
+            stagnationLimit = int.Parse(txtStagnation.Text);
+            PartentRatio = double.Parse(txtParentRatio.Text) / 100;
+            MutationRatio = double.Parse(txtMutationPercent.Text) / 100;
+            CrossoverRatio = double.Parse(txtCrossoverPercent.Text) / 100;
+            stagnationCounter = 0;
+            bestFitness = int.MaxValue;
+            selectionType = cmbSelection.SelectedItem.ToString();
+            crossoverType = cmbCrossover.SelectedItem.ToString();
+            mutationType = cmbMutation.SelectedItem.ToString();
+
+            if (chkUseSamePopulation.Checked && population != null)
+            {
+                population.resetPopulation();
+            }
+            else
+            {
+                population = new Population(numPopulations, populationSize);
+            }
+
+            cts = new CancellationTokenSource();
+            if (chkSkipVisualisation.Checked)
+            {
+                int repeatCount = 1;
+                int.TryParse(txtRepeatCount.Text, out repeatCount);
+                for (int i = 0; i < repeatCount; i++)
+                {
+                    stagnationCounter = 0;
+                    bestFitness = int.MaxValue;
+
+                    if (chkUseSamePopulation.Checked)
+                        population.resetPopulation();
+                    else
+                        population = new Population(numPopulations, populationSize);
+                    RunAnlgorithmQuick();
+                }
+                DrawBestChromosome();
+                MessageBox.Show($"Algorytm wykonany został {txtRepeatCount.Text} razy, wyniki zostały zapisane do pliku.", "Koniec");
+                lblIteration.Text = $"Iteracja: {_lastGeneration + 1}";
+                lblBestFitness.Text = $"Najlepszy Fitness: {population.BestFitness()}";
+            }
+            else
+            {
+                await RunAlgorithm(cts.Token);
+            }
+            btnStart.Enabled = true;
+        }
+        catch (FormatException)
+        {
+            MessageBox.Show("Nieprawidłowy format danych wejściowych!", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            btnStart.Enabled = true;
+            return;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Wystąpił błąd: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            btnStart.Enabled = true;
+            return;
+        }
+    }
+
+    private void btnSaveFile_Click(object sender, EventArgs e)
+    {
+        using (SaveFileDialog saveFileDialog = new SaveFileDialog())
+        {
+            saveFileDialog.Title = "Wybierz miejsce do zapisu wyników";
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                txtSciezka = saveFileDialog.FileName;
+            }
+        }
+    }
+
+    private void button1_Click(object sender, EventArgs e)
+    {
+        _quickEnd = true;
+    }
+}
