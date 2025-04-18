@@ -63,9 +63,12 @@
             btnResume = new Button();
             btnPause = new Button();
             pictureBox = new PictureBox();
-            lblBestFitness = new Label();
             lblIteration = new Label();
             chartBox2 = new PictureBox();
+            button1 = new Button();
+            backgroundWorker1 = new System.ComponentModel.BackgroundWorker();
+            lblBestFitness = new Label();
+            lblInfo = new Label();
             ((System.ComponentModel.ISupportInitialize)TrackBar).BeginInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox).BeginInit();
             ((System.ComponentModel.ISupportInitialize)chartBox2).BeginInit();
@@ -274,7 +277,7 @@
             txtParentRatio.Name = "txtParentRatio";
             txtParentRatio.Size = new Size(29, 23);
             txtParentRatio.TabIndex = 20;
-            txtParentRatio.Text = "10";
+            txtParentRatio.Text = "50";
             txtParentRatio.TextAlign = HorizontalAlignment.Center;
             // 
             // cmbSelection
@@ -327,6 +330,7 @@
             TrackBar.TabIndex = 27;
             TrackBar.TickFrequency = 100;
             TrackBar.Value = 250;
+            TrackBar.Scroll += test;
             // 
             // chkUseSamePopulation
             // 
@@ -343,7 +347,7 @@
             chkSkipVisualisation.AutoSize = true;
             chkSkipVisualisation.Location = new Point(245, 208);
             chkSkipVisualisation.Name = "chkSkipVisualisation";
-            chkSkipVisualisation.Size = new Size(88, 19);
+            chkSkipVisualisation.Size = new Size(87, 19);
             chkSkipVisualisation.TabIndex = 32;
             chkSkipVisualisation.Text = "Tylko wynik";
             chkSkipVisualisation.UseVisualStyleBackColor = true;
@@ -382,12 +386,13 @@
             // 
             // btnSaveFile
             // 
-            btnSaveFile.Location = new Point(502, 205);
+            btnSaveFile.Location = new Point(502, 180);
             btnSaveFile.Name = "btnSaveFile";
             btnSaveFile.Size = new Size(146, 23);
             btnSaveFile.TabIndex = 36;
             btnSaveFile.Text = "Ustaw ścieżkę zapisu";
             btnSaveFile.UseVisualStyleBackColor = true;
+            btnSaveFile.Click += btnSaveFile_Click;
             // 
             // btnResume
             // 
@@ -412,21 +417,11 @@
             // pictureBox
             // 
             pictureBox.BackColor = Color.White;
-            pictureBox.Location = new Point(20, 233);
+            pictureBox.Location = new Point(83, 235);
             pictureBox.Name = "pictureBox";
-            pictureBox.Size = new Size(624, 470);
+            pictureBox.Size = new Size(500, 500);
             pictureBox.TabIndex = 39;
             pictureBox.TabStop = false;
-            // 
-            // lblBestFitness
-            // 
-            lblBestFitness.AutoSize = true;
-            lblBestFitness.Location = new Point(20, 706);
-            lblBestFitness.Name = "lblBestFitness";
-            lblBestFitness.Size = new Size(150, 15);
-            lblBestFitness.TabIndex = 40;
-            lblBestFitness.Text = "Najlepszy obecnie fitness: -";
-            lblBestFitness.TextAlign = ContentAlignment.TopCenter;
             // 
             // lblIteration
             // 
@@ -447,14 +442,46 @@
             chartBox2.TabIndex = 45;
             chartBox2.TabStop = false;
             // 
+            // button1
+            // 
+            button1.Location = new Point(263, 180);
+            button1.Name = "button1";
+            button1.Size = new Size(131, 23);
+            button1.TabIndex = 46;
+            button1.Text = "Przewiń do końca";
+            button1.UseVisualStyleBackColor = true;
+            button1.Click += button1_Click;
+            // 
+            // lblBestFitness
+            // 
+            lblBestFitness.AutoSize = true;
+            lblBestFitness.Location = new Point(20, 706);
+            lblBestFitness.Name = "lblBestFitness";
+            lblBestFitness.Size = new Size(30, 15);
+            lblBestFitness.TabIndex = 47;
+            lblBestFitness.Text = "chuj";
+            lblBestFitness.TextAlign = ContentAlignment.TopCenter;
+            // 
+            // lblInfo
+            // 
+            lblInfo.AutoSize = true;
+            lblInfo.Location = new Point(523, 212);
+            lblInfo.Name = "lblInfo";
+            lblInfo.Size = new Size(108, 15);
+            lblInfo.TabIndex = 48;
+            lblInfo.Text = "Algorytm pracuje...";
+            lblInfo.Visible = false;
+            // 
             // TSP
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(660, 748);
+            Controls.Add(lblInfo);
+            Controls.Add(lblBestFitness);
+            Controls.Add(button1);
             Controls.Add(chartBox2);
             Controls.Add(lblIteration);
-            Controls.Add(lblBestFitness);
             Controls.Add(pictureBox);
             Controls.Add(btnPause);
             Controls.Add(btnResume);
@@ -492,6 +519,7 @@
             Controls.Add(lblPopSize);
             Name = "TSP";
             Text = "Problem Komiwojażera";
+            Load += TSP_Load;
             ((System.ComponentModel.ISupportInitialize)TrackBar).EndInit();
             ((System.ComponentModel.ISupportInitialize)pictureBox).EndInit();
             ((System.ComponentModel.ISupportInitialize)chartBox2).EndInit();
@@ -538,6 +566,10 @@
         private Button btnResume;
         private Button btnPause;
         private PictureBox pictureBox;
+        private Button button1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
+        private Label lblIteration;
         private Label lblBestFitness;
+        private Label lblInfo;
     }
 }
