@@ -12,15 +12,24 @@ namespace TSP.Models
         public List<Chromosome> parentPopulation = new();
 
         public Chromosome baseChromosome;
-        private int _numberOfPopulations;
+        public int numberOfChromosomes;
         public string populationID;
         public Population(int numberOfPopulations, int numberOfGenes)
         {
-            _numberOfPopulations = numberOfPopulations;
+            numberOfChromosomes = numberOfPopulations;
             baseChromosome = new(numberOfGenes);
             createBasePopulation();
             parentPopulation = new List<Chromosome>(basePopulation);
             populationID = Guid.NewGuid().ToString();
+        }
+
+        public void ChangeNumberOfChromosomes(int newNumberOfChromosomes)
+        {
+            numberOfChromosomes = newNumberOfChromosomes;
+            basePopulation.Clear();
+            parentPopulation.Clear();
+            createBasePopulation();
+            parentPopulation = new List<Chromosome>(basePopulation);
         }
         public void resetPopulation()
         {
@@ -28,7 +37,7 @@ namespace TSP.Models
         }
         private void createBasePopulation()
         {
-            for (int i = 0; i < _numberOfPopulations; i++)
+            for (int i = 0; i < numberOfChromosomes; i++)
             {
                 basePopulation.Add(baseChromosome.Shuffle());
             }
@@ -36,7 +45,7 @@ namespace TSP.Models
 
         public void createNextPopulation(string selectionType, string crossoverType, string mutationType, double parentRatio, double crossoverRatio, double mutationRatio)
         {
-            int add = (_numberOfPopulations % 2 == 1) ? 1 : 0;
+            int add = (numberOfChromosomes % 2 == 1) ? 1 : 0;
 
             // Selekcja rodziców do krzyżowania
             List<Chromosome> selectedParents = Operations.Selections.Select(parentPopulation, selectionType);

@@ -4,8 +4,9 @@ namespace TSP.Operations
 {
     public static class Selections
     {
-        public static List<Chromosome> Select(List<Chromosome> population, string selectionType, int tournamentSize = 3)
+        public static List<Chromosome> Select(List<Chromosome> population, string selectionType)
         {
+            int tournamentSize = (int)Math.Max(2, Math.Sqrt(population.Count));
             switch (selectionType.ToLower())
             {
                 case "ruletkowa":
@@ -52,15 +53,44 @@ namespace TSP.Operations
             for (int i = 0; i < population.Count; i++)
             {
                 var tournament = population.OrderBy(x => rand.Next()).Take(tournamentSize).ToList();
-                selected.Add(tournament.OrderByDescending(c => c.Fitness).First());
+                selected.Add(tournament.OrderBy(c => c.Fitness).First());
             }
             return selected;
         }
 
         private static List<Chromosome> RankSelection(List<Chromosome> population)
         {
+            List<Chromosome> selected = new List<Chromosome>();
+            Random rand = new Random();
+
             var rankedPopulation = population.OrderBy(c => c.Fitness).ToList();
-            return rankedPopulation.Take(rankedPopulation.Count / 2 + 1).ToList();
+            int n = rankedPopulation.Count;
+
+            double total = (n * (n + 1)) / 2.0; 
+            var probabilities = new double[n];
+
+            for (int i = 0; i < n; i++)
+            {
+                probabilities[i] = (n - i) / total; 
+            }
+
+            for (int i = 0; i < population.Count; i++)
+            {
+                double r = rand.NextDouble();
+                double cumulative = 0.0;
+
+                for (int j = 0; j < n; j++)
+                {
+                    cumulative += probabilities[j];
+                    if (r <= cumulative)
+                    {
+                        selected.Add(rankedPopulation[j]);
+                        break;
+                    }
+                }
+            }
+
+            return selected;
         }
     }
 }

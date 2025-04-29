@@ -19,5 +19,6 @@ namespace TSP.Models
         public bool QuickEnd { get; set; } = false;
         public DateTime StartTime { get; set; }
         public int Speed { get; set; } = 250;
+        public bool QuickEndWithoutProceeding { get; set; } = false;
     }
 }

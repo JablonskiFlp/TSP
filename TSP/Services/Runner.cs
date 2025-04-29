@@ -23,7 +23,7 @@ namespace TSP.Services
         {
             for (int i = 0; i < _settings.Generations; i++)
             {
-                if (token.IsCancellationRequested) break;
+                if (token.IsCancellationRequested || _state.QuickEndWithoutProceeding) break;
                 while (_state.IsPaused) await Task.Delay(100);
 
                 _state.Population.createNextPopulation(
@@ -73,7 +73,7 @@ namespace TSP.Services
         {
             for (int i = 0; i < _settings.Generations; i++)
             {
-                if (token.IsCancellationRequested)
+                if (token.IsCancellationRequested || _state.QuickEndWithoutProceeding)
                     break;
 
                 _state.Population.createNextPopulation(
