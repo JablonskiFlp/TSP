@@ -11,31 +11,29 @@ namespace TSP.Models
         public List<Gene> genes = new List<Gene>();
         private static Random rand = new Random();
         private static int[,] _distanceMatrix;
-        private int _numberOfGenes;
+        public int numberOfGenes;
         public int Fitness;
 
-        public Chromosome(int numberOfGenes)
+        public Chromosome(int numberOfGenees)
         {
-            _numberOfGenes = numberOfGenes;
+            numberOfGenes = numberOfGenees;
             createBaseChromosome();
             CreateDistanceMatrix();
-
-
         }
         private void createBaseChromosome()
         {
-            for (int i = 0; i < _numberOfGenes; i++)
+            for (int i = 0; i < numberOfGenes; i++)
             {
                 genes.Add(new Gene(rand.Next(0, 100), rand.Next(0, 100), "City" + i, i));
             }
         }
         private void CreateDistanceMatrix()
         {
-            _distanceMatrix = new int[_numberOfGenes, _numberOfGenes];
+            _distanceMatrix = new int[numberOfGenes, numberOfGenes];
 
-            for (int i = 0; i < _numberOfGenes; i++)
+            for (int i = 0; i < numberOfGenes; i++)
             {
-                for (int j = 0; j < _numberOfGenes; j++)
+                for (int j = 0; j < numberOfGenes; j++)
                 {
                     _distanceMatrix[i, j] = Gene.CalculateDistance(genes[i], genes[j]);
                 }
@@ -53,7 +51,7 @@ namespace TSP.Models
 
         public Chromosome(List<Gene> genes)
         {
-            _numberOfGenes = genes.Count;
+            numberOfGenes = genes.Count;
             this.genes = new List<Gene>(genes);
             this.addFitness();
         }
@@ -61,11 +59,11 @@ namespace TSP.Models
         private int calculateFitness()
         {
             int fitness = 0;
-            for (int i = 0; i < _numberOfGenes - 1; i++)
+            for (int i = 0; i < numberOfGenes - 1; i++)
             {
                 fitness += _distanceMatrix[genes[i].Position, genes[i + 1].Position];
             }
-            fitness += _distanceMatrix[genes[_numberOfGenes - 1].Position, genes[0].Position];
+            fitness += _distanceMatrix[genes[numberOfGenes - 1].Position, genes[0].Position];
             return fitness;
         }
         public void addFitness()

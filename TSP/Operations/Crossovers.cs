@@ -12,7 +12,7 @@ namespace TSP.Operations
             List<Chromosome> offspring = new List<Chromosome>();
             Random rand = new Random();
 
-            for (int i = 0; i < parents.Count; i += 2)
+            for (int i = 0; i < parents.Count - 1; i += 2)
             {
                 if (rand.NextDouble() <= crossoverRate)
                 {
@@ -34,6 +34,11 @@ namespace TSP.Operations
                     offspring.Add(parents[i + 1]);
                 }
             }
+
+            if (parents.Count % 2 != 0)
+            {
+                offspring.Add(parents[^1]); 
+            }
             return offspring;
         }
 
@@ -49,14 +54,12 @@ namespace TSP.Operations
             List<Gene> childGenes1 = new List<Gene>(new Gene[size]);
             List<Gene> childGenes2 = new List<Gene>(new Gene[size]);
 
-            // Copy selected segment
             for (int j = start; j < end; j++)
             {
                 childGenes1[j] = parent1.genes[j];
                 childGenes2[j] = parent2.genes[j];
             }
 
-            // Fill remaining genes
             FillRemainingGenes(parent2, childGenes1, start, end);
             FillRemainingGenes(parent1, childGenes2, start, end);
 

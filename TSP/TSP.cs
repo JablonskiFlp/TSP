@@ -14,14 +14,15 @@ public partial class TSP : Form
     public TSP()
     {
         InitializeComponent();
+        this.AutoScaleMode = AutoScaleMode.None;
     }
 
     private async void btnStart_Click(object sender, EventArgs e)
     {
         try
         {
-            settings.populationsSuze = int.Parse(txtPopSize.Text);
-            settings.numPopulations = int.Parse(txtNumPop.Text);
+            settings.txtCityCount = int.Parse(txtCityCount.Text);
+            settings.numChromosomes = int.Parse(txtNumPop.Text);
             token = new();
             if (!InitializeSettings())
             {
@@ -29,13 +30,23 @@ public partial class TSP : Form
                 return;
             }
 
-            if (chkUseSamePopulation.Checked && state.Population != null)
+            if (settings.txtCityCount < 3)
+            {
+                MessageBox.Show("Liczba miast musi byæ wiêksza ni¿ 2!", "B³¹d", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                btnStart.Enabled = true;
+                return;
+            }
+            state.QuickEnd = false;
+            btnStart.Enabled = false;
+            state.QuickEndWithoutProceeding = false;
+            if (chkUseSamePopulation.Checked && state.Population != null && state.Population.baseChromosome.numberOfGenes == settings.txtCityCount)
             {
                 state.Population.resetPopulation();
+                state.Population.ChangeNumberOfChromosomes(settings.numChromosomes);
             }
             else
             {
-                state.Population = new Population(settings.numPopulations, settings.populationsSuze);
+                state.Population = new Population(settings.numChromosomes, settings.txtCityCount);
             }
             lblInfo.Visible = true;
             algorithmRunner = new Runner(settings, state);
@@ -84,7 +95,7 @@ public partial class TSP : Form
 
     private void btnPause_Click(object sender, EventArgs e)
     {
-        state.IsPaused = false;
+        state.IsPaused = true;
     }
 
     private void chkSkipVisualisation_CheckedChanged(object sender, EventArgs e)
@@ -97,7 +108,7 @@ public partial class TSP : Form
 
     private void btnResume_Click(object sender, EventArgs e)
     {
-        state.IsPaused = true;
+        state.IsPaused = false;
     }
 
     private async Task RunWithoutVisualization()
@@ -112,13 +123,20 @@ public partial class TSP : Form
             if (chkUseSamePopulation.Checked && state.Population != null)
                 state.Population.resetPopulation();
             else
-                state.Population = new Population(settings.numPopulations, settings.populationsSuze);
+                state.Population = new Population(settings.numChromosomes, settings.txtCityCount);
 
             await algorithmRunner.RunQuickAsync(token);
         }
         DrawBestChromosome();
-
-        MessageBox.Show($"Algorytm wykonany zosta³ {repeatCount} razy, wyniki zosta³y zapisane do pliku.", "Koniec");
+        if(state.QuickEndWithoutProceeding)
+        {
+            MessageBox.Show("Algorytm zosta³ przerwany przez u¿ytkownika.", "Koniec");
+            return;
+        }
+        else
+        {
+            MessageBox.Show($"Algorytm wykonany zosta³ {repeatCount} razy, wyniki zosta³y zapisane do pliku.", "Koniec");
+        }
 
         lblIteration.Text = $"Iteracja: {state.LastGeneration + 1}";
         lblBestFitness.Text = $"Najlepszy Fitness: {state.Population.BestFitness()}";
@@ -132,7 +150,14 @@ public partial class TSP : Form
             DrawChart();
             DrawBestChromosome();
         });
-        MessageBox.Show("To jest najlepsze rozwi¹zanie jakie uda³o siê znaleŸæ. Wyniki zosta³y zapisane do pliku.", "Koniec");
+        if (state.QuickEndWithoutProceeding)
+        {
+            MessageBox.Show("Algorytm zosta³ przerwany przez u¿ytkownika.", "Koniec");
+            return;
+        }
+        {
+            MessageBox.Show("To jest najlepsze rozwi¹zanie jakie uda³o siê znaleŸæ. Wyniki zosta³y zapisane do pliku.", "Koniec");
+        }
     }
     private bool InitializeSettings()
     {
@@ -147,7 +172,6 @@ public partial class TSP : Form
             settings.SelectionType = cmbSelection.SelectedItem?.ToString() ?? "Tournament";
             settings.CrossoverType = cmbCrossover.SelectedItem?.ToString() ?? "OX1";
             settings.MutationType = cmbMutation.SelectedItem?.ToString() ?? "Swap";
-            settings.SavePath = "";
 
             state.StartTime = DateTime.Now;
             state.StagnationCounter = 0;
@@ -187,6 +211,11 @@ public partial class TSP : Form
     private void test(object sender, EventArgs e)
     {
         state.Speed = TrackBar.Value;
+    }
+
+    private void button2_Click(object sender, EventArgs e)
+    {
+        state.QuickEndWithoutProceeding = true;
     }
 }
 

@@ -20,12 +20,12 @@ namespace TSP.Services
                     settings.SavePath = Path.Combine(folder, "wyniki.csv");
                 }
 
-                bool addHeader = !File.Exists(settings.SavePath) || new FileInfo(settings.SavePath).Length == 0;
+                bool addHeader = !File.Exists(settings.SavePath) || IsReallyEmpty(settings.SavePath);
 
                 using StreamWriter sw = new StreamWriter(settings.SavePath, append: true);
                 if (addHeader)
                 {
-                    sw.WriteLine("PopulationID,Czas,Generacje,Stagnacja,OstatniaGeneracja,Fitness,Populacja,Geny,Selekcja,Krzyżowanie,Mutacja,ProcentRodzicow,ProcentMutacji,ProcentKrzyzowania,IsQuick");
+                    sw.WriteLine("PopulationID,Czas,Generacje,Stagnacja,OstatniaGeneracja,Fitness,LiczbaMiast,IloscChromosomow,Selekcja,Krzyżowanie,Mutacja,ProcentRodzicow,ProcentMutacji,ProcentKrzyzowania,IsQuick");
                 }
 
                 Chromosome best = state.Population.GetBestChromosome();
@@ -38,8 +38,8 @@ namespace TSP.Services
                     settings.StagnationLimit,
                     state.LastGeneration,
                     state.BestFitness,
-                    state.Population.basePopulation.Count,
-                    best.genes.Count,
+                    state.Population.baseChromosome.numberOfGenes,
+                    state.Population.numberOfChromosomes,
                     settings.SelectionType,
                     settings.CrossoverType,
                     settings.MutationType,
@@ -55,6 +55,14 @@ namespace TSP.Services
             {
                 MessageBox.Show($"Błąd zapisu pliku: {ex.Message}", "Błąd", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
+        }
+        static bool IsReallyEmpty(string path)
+        {
+            if (!File.Exists(path))
+                return true;
+
+            string content = File.ReadAllText(path).Trim();
+            return string.IsNullOrEmpty(content);
         }
     }
 }
